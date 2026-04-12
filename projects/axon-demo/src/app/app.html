@@ -1,0 +1,72 @@
+<main class="container">
+  <header>
+    <h1>Axon Workflow Engine</h1>
+    <p>Order Approval & Shipping Demo</p>
+  </header>
+
+  <section class="order-card">
+    <div class="card-header">
+      <span class="order-id">{{ order.context().id }}</span>
+      <span class="badge" [attr.data-status]="order.state()">
+        {{ order.state() }}
+      </span>
+    </div>
+
+    <div class="card-body">
+      <div class="detail">
+        <label>Customer:</label>
+        <span>{{ order.context().customer }}</span>
+      </div>
+      <div class="detail">
+        <label>Total Amount:</label>
+        <span>{{ order.context().total | currency }}</span>
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button class="btn btn-primary" 
+              [disabled]="!order.can.Pending()" 
+              (click)="submit()">
+        Submit for Approval
+      </button>
+
+      <button class="btn btn-success" 
+              [disabled]="!order.can.Approved()" 
+              (click)="approve()">
+        Approve Order
+      </button>
+
+      <button class="btn btn-shipping" 
+              [disabled]="!order.can.Shipped()" 
+              (click)="ship()">
+        Ship Now
+      </button>
+
+      <div class="secondary-actions">
+        <button class="btn btn-outline" 
+                [disabled]="!order.can.Rejected()" 
+                (click)="reject()">
+          Reject
+        </button>
+        
+        <button class="btn btn-outline" 
+                [disabled]="!order.can.Draft()" 
+                (click)="reset()">
+          Return to Draft
+        </button>
+
+        <button class="btn btn-danger" 
+                [disabled]="!order.can.Cancelled()" 
+                (click)="cancel()">
+          Cancel Order
+        </button>
+      </div>
+    </div>
+  </section>
+
+  @if (order.state() === 'Shipped') {
+    <div class="success-message">
+      🎉 Order has been successfully dispatched!
+    </div>
+  }
+</main>
