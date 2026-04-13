@@ -19,7 +19,7 @@
     "useDefineForClassFields": false,
     "lib": ["ES2022", "dom"],
     "paths": {
-      "axon": [
+      "@ng-axon/core": [
         "./projects/axon/src/public-api.ts"
       ]
     }

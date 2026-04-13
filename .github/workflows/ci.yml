@@ -34,9 +34,10 @@ jobs:
         # If linting fails, the rest won't run, saving time.
         # Ensure you have a 'lint' script in package.json.
 
+      - name: Build Library
+        run: npm run build axon
+        # Building the library makes sure that the library itself can be found by the tests, which is crucial for a monorepo setup.
+
       - name: Run Tests
         run: npm run test -- --watch=false --coverage
         # Since you're using Vitest, --watch=false is required for CI.
-
-      - name: Build Library
-        run: npm run build
