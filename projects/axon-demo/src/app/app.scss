@@ -97,3 +97,35 @@
   border-radius: 6px;
   text-align: center;
 }
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-controls {
+  display: flex;
+  gap: 8px;
+
+  .btn-icon {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #f0f2f5;
+    border: 1px solid #dcdfe6;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      background: #e4e7ed;
+    }
+  }
+}

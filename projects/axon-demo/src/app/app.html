@@ -1,7 +1,26 @@
 <main class="container">
   <header>
-    <h1>Axon Workflow Engine</h1>
-    <p>Order Approval & Shipping Demo</p>
+    <div class="header-content">
+      <div>
+        <h1>Axon Workflow Engine</h1>
+        <p>Order Approval & Shipping Demo</p>
+      </div>
+
+      <div class="history-controls">
+        <button class="btn btn-icon" 
+                title="Undo"
+                [disabled]="!order.canUndo()" 
+                (click)="undo()">
+          <span class="icon">↶</span> Undo
+        </button>
+        <button class="btn btn-icon" 
+                title="Redo"
+                [disabled]="!order.canRedo()" 
+                (click)="redo()">
+          Redo <span class="icon">↷</span>
+        </button>
+      </div>
+    </div>
   </header>
 
   <section class="order-card">
@@ -21,6 +40,11 @@
         <span>Total Amount:</span>
         <span>{{ order.context().total | currency }}</span>
       </div>
+      @if (order.historySize > 1) {
+        <div class="history-badge">
+          Step {{ order.historySize }} of workflow
+        </div>
+      }
     </div>
 
     <div class="card-actions">
