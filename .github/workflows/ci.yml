@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# This is the secret sauce for free tier optimization:
+# It cancels any previous runs on the same branch if you push a new commit.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm' # Automatically caches node_modules based on package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci # Faster and more reliable than 'npm install'
+
+      - name: Lint
+        run: npm run lint
+        # If linting fails, the rest won't run, saving time.
+        # Ensure you have a 'lint' script in package.json.
+
+      - name: Run Tests
+        run: npm run test -- --watch=false --coverage
+        # Since you're using Vitest, --watch=false is required for CI.
+
+      - name: Build Library
+        run: npm run build
