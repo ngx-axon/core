@@ -1,4 +1,10 @@
 # 🧠 Axon
+[![CI Status](https://github.com/axon-state/core/actions/workflows/ci.yml/badge.svg)](https://github.com/axon-state/core/actions/workflows/ci.yml)
+[![Release Status](https://github.com/axon-state/core/actions/workflows/release.yml/badge.svg)](https://github.com/axon-state/core/actions/workflows/release.yml)
+[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Powered by Signals](https://img.shields.io/badge/powered_by-signals-red?logo=angular&logoColor=white)](https://angular.io/guide/signals)
+
 > **The Neural Pathway for Angular State Managment using Signals.**
 
 Axon is a lightweight, signal-native Finite State Machine (FSM) designed for **Angular 21**. It replaces bloated state management patterns with a lean, mathematically certain approach to state transitions.
