@@ -23,7 +23,7 @@ jobs:
         run: npm ci
 
       - name: Build Library
-        run: npm run build
+        run: npm run build axon
 
       - name: Pack Library
         # This creates a .tgz file of your library, standard for NPM/Angular dists
