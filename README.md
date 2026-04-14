@@ -7,6 +7,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Powered by Signals](https://img.shields.io/badge/powered_by-signals-red?logo=angular&logoColor=white)](https://angular.io/guide/signals)
 [![Angular Version](https://img.shields.io/badge/angular-%3E%3D21.0.0-dd0031?style=flat-square&logo=angular)](https://angular.io/)
+[![npm version](https://img.shields.io/npm/v/@axon-state/core?style=flat-square&logo=npm)](https://www.npmjs.com/package/@axon-state/core)
+[![npm downloads](https://img.shields.io/npm/dm/@axon-state/core?style=flat-square)](https://www.npmjs.com/package/@axon-state/core)
 
 > **The Neural Pathway for Angular State Management using Signals.**
 
