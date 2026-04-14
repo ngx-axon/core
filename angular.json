@@ -61,8 +61,8 @@
                 "glob": "**/*",
                 "input": "projects/axon-demo/public"
               },
-              "../../README.md",
-              "../../LICENSE"
+              "README.md",
+              "LICENSE"
             ],
             "styles": ["projects/axon-demo/src/styles.scss"]
           },
