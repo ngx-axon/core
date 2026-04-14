@@ -8,6 +8,9 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
     # Ensure this only runs if tests passed (optional, but recommended)
     steps:
       - name: Checkout Code
