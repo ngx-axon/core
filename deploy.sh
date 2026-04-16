@@ -23,6 +23,9 @@ VERSION=${TAG#v}
 
 echo "🚀 Starting deployment for @ngx-axon/core version: $VERSION"
 
+cp README.md projects/axon/README.md
+cp LICENCE.md projects/axon/LICENCE.md
+
 # 3. Clean Install & Build
 echo "📦 Installing dependencies..."
 npm ci
@@ -53,3 +56,6 @@ echo "🚢 Publishing to npm..."
 npm publish --access public ## --provenance TODO re-enable --provenance once we have OIDC/Trusted Publishing configured for this headless environment
 
 echo "✅ Successfully deployed $TAG to npm!"
+
+rm projects/axon/README.md
+rm projects/axon/LICENCE.md

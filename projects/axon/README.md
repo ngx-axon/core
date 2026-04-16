@@ -1,64 +1,102 @@
-# Axon
+# 🧠 Axon
+[![CI Status](https://github.com/ngx-axon/core/actions/workflows/ci.yml/badge.svg)](https://github.com/ngx-axon/core/actions/workflows/ci.yml)
+[![Release Status](https://github.com/ngx-axon/core/actions/workflows/release.yml/badge.svg)](https://github.com/ngx-axon/core/actions/workflows/release.yml)
+[![codecov](https://codecov.io/gh/ngx-axon/core/branch/main/graph/badge.svg)](https://codecov.io/gh/ngx-axon/core)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-orange.svg?style=flat-square)](https://github.com/ngx-axon/core/issues)
+[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Powered by Signals](https://img.shields.io/badge/powered_by-signals-red?logo=angular&logoColor=white)](https://angular.io/guide/signals)
+[![Angular Version](https://img.shields.io/badge/angular-%3E%3D21.0.0-dd0031?style=flat-square&logo=angular)](https://angular.io/)
+[![npm version](https://img.shields.io/npm/v/@ngx-axon/core?style=flat-square&logo=npm)](https://www.npmjs.com/package/@ngx-axon/core)
+[![npm downloads](https://img.shields.io/npm/dm/@ngx-axon/core?style=flat-square)](https://www.npmjs.com/package/@ngx-axon/core)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.0.
+> **The Neural Pathway for Angular State Management using Signals.**
 
-## Code scaffolding
+Axon is a lightweight, signal-native Finite State Machine (FSM) designed for **Angular 21**. It replaces bloated state management patterns with a lean approach based on FSMs, which guarantee mathematically predictable and reliable state transitions.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Why Axon?
+Modern Angular has moved beyond RxJS-heavy stores. Axon provides a **[Signal-first](https://angular.io/guide/signals)** architecture that ensures your application logic is both predictable and incredibly fast.
 
-```bash
-ng generate component component-name
+* **⚡ Signal-Native:** Zero RxJS overhead. Built specifically for Angular's Zoneless future.
+* **🛡️ Typestate Safety:** Eliminate "impossible" states at the architectural level.
+* **🔄 Multi-Instance:** Effortlessly manage state for 1,000+ table rows, each with its own independent FSM.
+* **🎯 Reactive Guards:** `canGo` signals automatically disable UI elements based on transition rules.
+* **📦 Micro-Scale:** Under 2KB gzipped.
+
+---
+
+### Comparison: The Axon Edge
+
+| Feature | Axon | NgRx / Redux | XState |
+| :--- | :--- | :--- | :--- |
+| **Learning Curve** | Minutes | Weeks | Days |
+| **Boilerplate** | Ultra-Low | Extreme | Moderate |
+| **Performance** | O(1) Signal Updates (instant updates regardless of app size) | O(n) Selector Checks | Event-Bus Overhead |
+| **Multi-Instance** | Native (`new Axon`) | Complex (Factories) | Complex (Actors) |
+
+---
+
+### Quick Start
+
+#### 1. Define your Graph
+```typescript
+enum FileState { Idle, Uploading, Success, Error }
+
+const fileGraph: AxonGraph<FileState> = {
+  [FileState.Idle]:      [FileState.Uploading],
+  [FileState.Uploading]: [FileState.Success, FileState.Error],
+  [FileState.Error]:     [FileState.Uploading]
+};
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+#### 2. Initialize in your Component
+```typescript
+import { Axon } from '@axon/core';
 
-```bash
-ng generate --help
+@Component({ ... })
+export class UploadComponent {
+  // Simple multi-instance support
+  readonly axon = Axon.create(FileState.Idle, { progress: 0 }, fileGraph);
+
+  upload() {
+    if (this.axon.go(FileState.Uploading)) {
+      // Logic...
+    }
+  }
+}
 ```
 
-## Building
+#### 3. Reactive UI (Angular 21)
+```html
+<button 
+  [disabled]="!axon.can.Uploading()" 
+  (click)="upload()">
+  Start Upload
+</button>
 
-To build the library, run:
-
-```bash
-ng build axon
+<p>Status: {{ axon.state() }}</p>
 ```
 
-This command will compile your project, and the build artifacts will be placed in the `dist/` directory.
+> **How does `axon.can.Uploading()` work?**  
+> The `can` property provides a signal-based function for each possible state transition (e.g., `can.Uploading()`), returning `true` if the transition is currently allowed based on your FSM graph and any guards you define. This enables you to easily bind UI elements to the FSM's valid transitions.
 
-### Publishing the Library
+---
 
-Once the project is built, you can publish your library by following these steps:
+### Advanced: Logic Guards
+Axon allows you to define transitions that depend on the data context, not just the current state.
 
-1. Navigate to the `dist` directory:
-
-   ```bash
-   cd dist/axon
-   ```
-
-2. Run the `npm publish` command to publish your library to the npm registry:
-   ```bash
-   npm publish
-   ```
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
+```typescript
+const graph: AxonGraph<State, Context> = {
+  [State.Draft]: [
+    { 
+      to: State.Published, 
+      guard: (ctx) => ctx.content.length > 0 
+    }
+  ]
+};
 ```
 
-## Running end-to-end tests
+---
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+### License
+MIT © 2026 [Marco Buschini] <marco.buschini@gmail.com>. Built for the future of Angular.
