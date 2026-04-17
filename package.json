@@ -1,13 +1,13 @@
 {
   "name": "@ngx-axon/core",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "author": "Marco Buschini <marco.buschini@gmail.com>",
   "license": "MIT",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
+    "build:lib": "ng build axon",
+    "build:demo": "ng build axon-demo",
     "test": "ng test --coverage",
     "lint": "ng lint",
     "commit": "cz",
