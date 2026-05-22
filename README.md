@@ -9,7 +9,8 @@
 [![Angular Version](https://img.shields.io/badge/angular-%3E%3D21.0.0-dd0031?style=flat-square&logo=angular)](https://angular.io/)
 [![npm version](https://img.shields.io/npm/v/@ngx-axon/core?style=flat-square&logo=npm)](https://www.npmjs.com/package/@ngx-axon/core)
 [![npm downloads](https://img.shields.io/npm/dm/@ngx-axon/core?style=flat-square)](https://www.npmjs.com/package/@ngx-axon/core)
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/ngx-axon/core)
+[![Open in StackBlitz](https://img.shields.io/badge/Open%20in-StackBlitz-1389FD?style=flat&logo=stackblitz&logoColor=white)](https://stackblitz.com/github/ngx-axon/core)
+[![Documentation](https://img.shields.io/badge/Documentation-Read%20Axion%20Guide-E03131?style=flat&logo=angular&logoColor=white)](https://ngx-axon.github.io/core/)
 
 > **The Neural Pathway for Angular State Management using Signals.**
 
