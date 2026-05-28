@@ -31,7 +31,7 @@ echo "📦 Installing dependencies..."
 npm ci
 
 echo "🏗️  Building Angular library..."
-npm run build axon
+npm run build:lib
 
 # 4. Navigate to build output
 # Adjust this path if your build output location changes
