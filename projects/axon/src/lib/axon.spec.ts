@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import * as angularCore from '@angular/core';
 import { Axon, AxonGraph } from './axon';
 
 enum State {
@@ -18,7 +19,7 @@ describe('Axon Library', () => {
   const graph: AxonGraph<State, Context> = {
     [State.Idle]: [State.Loading],
     [State.Loading]: [
-      State.Loading, // <--- ADDED: Self-loop to allow context updates in history
+      State.Loading, // Self-loop to allow context updates in history
       State.Error,
       State.Idle
     ],
@@ -158,7 +159,6 @@ describe('Axon Library', () => {
     expect(axon.canRedo()).toBe(true);
 
     // 3. Transition to a NEW state (Idle) instead of Redoing to Error
-    // This should trigger: currentIndex < this._history.length - 1
     axon.go(State.Idle);
 
     expect(axon.state()).toBe(State.Idle);
@@ -207,9 +207,133 @@ describe('Axon Library', () => {
     expect(incompleteAxon.state()).toBe(State.Error);
 
     // 3. Now we are in 'Error'. 
-    // Since 'Error' is not a key in incompleteGraph, 
-    // this.graph[status] will be undefined, triggering the ?? [] fallback.
     expect(incompleteAxon.can.Idle()).toBe(false);
     expect(incompleteAxon.go(State.Idle)).toBe(false);
+  });
+
+  // =========================================================================
+  // Memory Management & Teardown Lifecycle Tests
+  // =========================================================================
+
+  describe('Memory Management & Lifecycle (destroy)', () => {
+    it('should initialize with isDestroyed set to false', () => {
+      expect(axon.isDestroyed).toBe(false);
+    });
+
+    it('should set isDestroyed to true and clear history/references on destroy()', () => {
+      axon.go(State.Loading);
+      expect(axon.historySize).toBe(2);
+
+      axon.destroy();
+
+      expect(axon.isDestroyed).toBe(true);
+      expect(axon.historySize).toBe(0);
+    });
+
+    it('should be idempotent when destroy() is called multiple times', () => {
+      axon.destroy();
+      expect(axon.isDestroyed).toBe(true);
+
+      // Calling again should not throw or cause unexpected state
+      expect(() => axon.destroy()).not.toThrow();
+      expect(axon.isDestroyed).toBe(true);
+    });
+
+    it('should prevent state transitions (go) when destroyed', () => {
+      axon.destroy();
+
+      const result = axon.go(State.Loading);
+      expect(result).toBe(false);
+      expect(axon.state()).toBe(State.Idle); // Unchanged
+    });
+
+    it('should return false from canGo and can proxy when destroyed', () => {
+      // Get canGo signal before destruction
+      const canLoadingBefore = axon.can.Loading;
+      expect(canLoadingBefore()).toBe(true);
+
+      axon.destroy();
+
+      // Signals should evaluate to false after destroy
+      expect(axon.canGo(State.Loading)()).toBe(false);
+      expect(axon.can.Loading()).toBe(false);
+    });
+
+    it('should ignore undo and redo calls when destroyed', () => {
+      axon.go(State.Loading);
+      axon.destroy();
+
+      const stateBeforeUndo = axon.state();
+      axon.undo();
+      expect(axon.state()).toBe(stateBeforeUndo);
+
+      axon.redo();
+      expect(axon.state()).toBe(stateBeforeUndo);
+    });
+
+    it('should automatically register destroy callback when injected inside DestroyRef context', () => {
+      let registeredCleanupFn: (() => void) | undefined;
+
+      const destroyRefMock: Partial<angularCore.DestroyRef> = {
+        onDestroy: vi.fn((fn: () => void) => {
+          registeredCleanupFn = fn;
+          return () => { return; }; // Return a no-op cleanup function
+        })
+      };
+
+      const customInjector: Partial<angularCore.EnvironmentInjector> = {
+        get: (token: unknown) => {
+          if (token === angularCore.DestroyRef) {
+            return destroyRefMock;
+          }
+          return null;
+        }
+      };
+
+      let injectedAxon: Axon<State, Context> | undefined;
+
+      angularCore.runInInjectionContext(
+        customInjector as unknown as angularCore.EnvironmentInjector,
+        () => {
+          injectedAxon = Axon.create(State.Idle, { attempts: 0 }, graph);
+        }
+      );
+
+      expect(destroyRefMock.onDestroy).toHaveBeenCalledTimes(1);
+      expect(injectedAxon?.isDestroyed).toBe(false);
+
+      // Trigger the Angular DestroyRef lifecycle callback
+      registeredCleanupFn?.();
+
+      expect(injectedAxon?.isDestroyed).toBe(true);
+    });
+
+    it('should gracefully handle instantiation outside an Injection Context without error', () => {
+      let unhandledAxon: Axon<State, Context> | undefined;
+
+      expect(() => {
+        unhandledAxon = Axon.create(State.Idle, { attempts: 0 }, graph);
+      }).not.toThrow();
+
+      expect(unhandledAxon).toBeDefined();
+      expect(unhandledAxon?.isDestroyed).toBe(false);
+
+      // Manual teardown works as fallback
+      unhandledAxon?.destroy();
+      expect(unhandledAxon?.isDestroyed).toBe(true);
+    });
+
+it('should return false when evaluating a pre-existing canGo signal after destroy()', () => {
+  // 1. Store reference to the computed signal BEFORE destroy
+  const preCachedSignal = axon.canGo(State.Loading);
+  expect(preCachedSignal()).toBe(true);
+
+  // 2. Destroy the store (clears _canGoCache and sets _isDestroyed to true)
+  axon.destroy();
+
+  // 3. Evaluate the pre-existing signal reference directly
+  // This executes the computed closure body and hits line 90: if (this._isDestroyed) return false;
+  expect(preCachedSignal()).toBe(false);
+});
   });
 });
