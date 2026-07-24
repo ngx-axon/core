@@ -1,6 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as angularCore from '@angular/core';
-import { Axon, AxonGraph } from './axon';
+import {
+  Axon,
+  AxonGraph,
+  configureAxon,
+  resetAxonGlobalConfig
+} from './axon';
 
 enum State {
   Idle = 'Idle',
@@ -27,13 +32,20 @@ describe('Axon Library', () => {
   };
 
   beforeEach(() => {
+    resetAxonGlobalConfig();
     // Limit of 3: [State1, State2, State3]
     axon = Axon.create(State.Idle, { attempts: 0 }, graph, 3);
+  });
+
+  afterEach(() => {
+    resetAxonGlobalConfig();
+    vi.restoreAllMocks();
   });
 
   it('should restore context exactly as it was during undo', () => {
     // 1. Idle {0} -> Loading {1} (Valid)
     axon.go(State.Loading, (ctx) => ({ ...ctx, attempts: 1 }));
+
     // 2. Loading {1} -> Loading {2} (Valid now because of self-loop)
     axon.go(State.Loading, (ctx) => ({ ...ctx, attempts: 2 }));
 
@@ -248,15 +260,19 @@ describe('Axon Library', () => {
     });
 
     it('should return false from canGo and can proxy when destroyed', () => {
-      // Get canGo signal before destruction
-      const canLoadingBefore = axon.can.Loading;
-      expect(canLoadingBefore()).toBe(true);
+      axon.destroy();
+
+      expect(axon.canGo(State.Loading)()).toBe(false);
+      expect(axon.can.Loading()).toBe(false);
+    });
+
+    it('should return false when evaluating a pre-existing canGo signal after destroy()', () => {
+      const preCachedSignal = axon.canGo(State.Loading);
+      expect(preCachedSignal()).toBe(true);
 
       axon.destroy();
 
-      // Signals should evaluate to false after destroy
-      expect(axon.canGo(State.Loading)()).toBe(false);
-      expect(axon.can.Loading()).toBe(false);
+      expect(preCachedSignal()).toBe(false);
     });
 
     it('should ignore undo and redo calls when destroyed', () => {
@@ -323,17 +339,132 @@ describe('Axon Library', () => {
       expect(unhandledAxon?.isDestroyed).toBe(true);
     });
 
-it('should return false when evaluating a pre-existing canGo signal after destroy()', () => {
-  // 1. Store reference to the computed signal BEFORE destroy
-  const preCachedSignal = axon.canGo(State.Loading);
-  expect(preCachedSignal()).toBe(true);
+    it('should return false when evaluating a pre-existing canGo signal after destroy()', () => {
+      // 1. Store reference to the computed signal BEFORE destroy
+      const preCachedSignal = axon.canGo(State.Loading);
+      expect(preCachedSignal()).toBe(true);
 
-  // 2. Destroy the store (clears _canGoCache and sets _isDestroyed to true)
-  axon.destroy();
+      // 2. Destroy the store (clears _canGoCache and sets _isDestroyed to true)
+      axon.destroy();
 
-  // 3. Evaluate the pre-existing signal reference directly
-  // This executes the computed closure body and hits line 90: if (this._isDestroyed) return false;
-  expect(preCachedSignal()).toBe(false);
-});
+      // 3. Evaluate the pre-existing signal reference directly
+      // This executes the computed closure body and hits line 90: if (this._isDestroyed) return false;
+      expect(preCachedSignal()).toBe(false);
+    });
+  });
+
+  // =========================================================================
+  // Developer Experience & Debug Logging Tests
+  // =========================================================================
+
+  describe('Developer Experience & Debug Logging', () => {
+    it('should not log transitions by default when debug is unconfigured', () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => { return; });
+
+      axon.go(State.Loading);
+
+      expect(consoleSpy).not.toHaveBeenCalled();
+    });
+
+    it('should log transitions when debug: true is passed in instance options', () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => { return; });
+
+      const debugAxon = Axon.create(State.Idle, { attempts: 0 }, graph, {
+        debug: true,
+        historyLimit: 10
+      });
+
+      debugAxon.go(State.Loading);
+
+      expect(consoleSpy).toHaveBeenCalledTimes(1);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '%c[ngx-axon]%c Idle ──> Loading %c| Context:',
+        'color: #8b5cf6; font-weight: bold;',
+        'color: inherit; font-weight: bold;',
+        'color: #6b7280;',
+        { attempts: 0 }
+      );
+    });
+
+    it('should include store name in tag when name option is provided', () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => { return; });
+
+      const namedAxon = Axon.create(State.Idle, { attempts: 0 }, graph, {
+        debug: true,
+        name: 'RowStore'
+      });
+
+      namedAxon.go(State.Loading);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '%c[ngx-axon: RowStore]%c Idle ──> Loading %c| Context:',
+        'color: #8b5cf6; font-weight: bold;',
+        'color: inherit; font-weight: bold;',
+        'color: #6b7280;',
+        { attempts: 0 }
+      );
+    });
+
+    it('should log transitions globally when configureAxon({ debug: true }) is called', () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => { return; });
+
+      configureAxon({ debug: true });
+
+      const defaultAxon = Axon.create(State.Idle, { attempts: 0 }, graph);
+      defaultAxon.go(State.Loading);
+
+      expect(consoleSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should allow instance debug: false to override global debug: true', () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => { return; });
+
+      configureAxon({ debug: true });
+
+      const mutedAxon = Axon.create(State.Idle, { attempts: 0 }, graph, {
+        debug: false
+      });
+
+      mutedAxon.go(State.Loading);
+
+      expect(consoleSpy).not.toHaveBeenCalled();
+    });
+
+    it('should respect custom history limit when passed inside AxonOptions object', () => {
+      const limitedAxon = Axon.create(State.Idle, { attempts: 0 }, graph, {
+        historyLimit: 2
+      });
+
+      limitedAxon.go(State.Loading);
+      limitedAxon.go(State.Error);
+      limitedAxon.go(State.Idle);
+
+      expect(limitedAxon.historySize).toBe(2);
+    });
+
+    it('should suppress log output when ngDevMode is explicitly false (production mode)', () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => { return; });
+
+      // 1. Safely mock Angular production mode without 'any'
+      const globalRef = globalThis as unknown as { ngDevMode?: boolean };
+      const previousNgDevMode = globalRef.ngDevMode;
+      globalRef.ngDevMode = false;
+
+      try {
+        // 2. Create store with debug explicitly enabled
+        const debugAxon = Axon.create(State.Idle, { attempts: 0 }, graph, {
+          debug: true
+        });
+
+        // 3. Trigger transition
+        debugAxon.go(State.Loading);
+
+        // 4. Assert that ngDevMode = false suppressed the log output
+        expect(consoleSpy).not.toHaveBeenCalled();
+      } finally {
+        // 5. Restore original ngDevMode state
+        globalRef.ngDevMode = previousNgDevMode;
+      }
+    });
   });
 });

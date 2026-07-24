@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Axon, AxonGraph } from '@ngx-axon/core'; // Adjusted path to your library file
+import { Axon, AxonGraph, configureAxon } from '@ngx-axon/core'; // Adjusted path to your library file
 
 enum OrderStatus {
   Draft = 'Draft',
@@ -44,6 +44,10 @@ export class App {
     this.orderGraph,
     10 // History Limit
   );
+
+  constructor() {
+    configureAxon({debug: true});
+  }
 
   // 3. Simple Action wrappers
   submit(): void { this.order.go(OrderStatus.Pending); }
