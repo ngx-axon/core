@@ -1,118 +1,191 @@
 # 🧠 Axon
 
-[![CI Status](https://github.com/ngx-axon/core/actions/workflows/ci.yml/badge.svg)](https://github.com/ngx-axon/core/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/ngx-axon/core/branch/main/graph/badge.svg)](https://codecov.io/gh/ngx-axon/core)
-[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-orange.svg?style=flat-square)](https://github.com/ngx-axon/core/issues)
-[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Powered by Signals](https://img.shields.io/badge/powered_by-signals-red?logo=angular&logoColor=white)](https://angular.io/guide/signals)
-[![Angular Version](https://img.shields.io/badge/angular-%3E%3D21.0.0-dd0031?style=flat-square&logo=angular)](https://angular.io/)
-[![npm version](https://img.shields.io/npm/v/@ngx-axon/core?style=flat-square&logo=npm)](https://www.npmjs.com/package/@ngx-axon/core)
-[![npm downloads](https://img.shields.io/npm/dm/@ngx-axon/core?style=flat-square)](https://www.npmjs.com/package/@ngx-axon/core)
-[![Open in StackBlitz](https://img.shields.io/badge/Open%20in-StackBlitz-1389FD?style=flat&logo=stackblitz&logoColor=white)](https://stackblitz.com/github/ngx-axon/core)
-[![Documentation](https://img.shields.io/badge/Documentation-Read%20Axion%20Guide-E03131?style=flat&logo=angular&logoColor=white)](https://ngx-axon.github.io/core/)
+<p align="center">
+  <b>The Neural Pathway for Angular State Management using Signals.</b>
+</p>
 
-> **The Neural Pathway for Angular State Management using Signals.**
+<p align="center">
+  <a href="https://github.com/ngx-axon/core/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ngx-axon/core/ci.yml?branch=main&style=flat-square&logo=github&label=CI" alt="CI Status"></a>
+  <a href="https://codecov.io/gh/ngx-axon/core"><img src="https://img.shields.io/codecov/c/github/ngx-axon/core/main?style=flat-square&logo=codecov" alt="Coverage"></a>
+  <a href="https://www.npmjs.com/package/@ngx-axon/core"><img src="https://img.shields.io/npm/v/@ngx-axon/core?style=flat-square&logo=npm&color=red" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@ngx-axon/core"><img src="https://img.shields.io/npm/dm/@ngx-axon/core?style=flat-square" alt="npm downloads"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="License: MIT"></a>
+</p>
 
-Axon is a lightweight, signal-native Finite State Machine (FSM) designed for **Angular 21**. It replaces bloated state management patterns with a lean approach based on FSMs, which guarantee mathematically predictable and reliable state transitions.
-
-### Why Axon?
-
-Modern Angular has moved beyond RxJS-heavy stores. Axon provides a **[Signal-first](https://angular.io/guide/signals)** architecture that ensures your application logic is both predictable and incredibly fast.
-
-- **⚡ Signal-Native:** Zero RxJS overhead. Built specifically for Angular's Zoneless future.
-- **🛡️ Typestate Safety:** Eliminate "impossible" states at the architectural level.
-- **🔄 Multi-Instance:** Effortlessly manage state for 1,000+ table rows, each with its own independent FSM.
-- **🎯 Reactive Guards:** `canGo` signals automatically disable UI elements based on transition rules.
-- **📦 Micro-Scale:** Under 2KB gzipped.
+<p align="center">
+  <a href="https://angular.dev"><img src="https://img.shields.io/badge/Angular-21.0%2B-dd0031?style=flat-square&logo=angular" alt="Angular Version"></a>
+  <a href="https://angular.dev/guide/signals"><img src="https://img.shields.io/badge/Signals-Native-007acc?style=flat-square&logo=typescript" alt="Signals Native"></a>
+  <a href="https://stackblitz.com/github/ngx-axon/core"><img src="https://img.shields.io/badge/Open%20in-StackBlitz-1389FD?style=flat-square&logo=stackblitz&logoColor=white" alt="StackBlitz"></a>
+</p>
 
 ---
 
-### Comparison: The Axon Edge
-
-| Feature            | Axon                                                         | NgRx / Redux         | XState             |
-| :----------------- | :----------------------------------------------------------- | :------------------- | :----------------- |
-| **Learning Curve** | Minutes                                                      | Weeks                | Days               |
-| **Boilerplate**    | Ultra-Low                                                    | Extreme              | Moderate           |
-| **Performance**    | O(1) Signal Updates (instant updates regardless of app size) | O(n) Selector Checks | Event-Bus Overhead |
-| **Multi-Instance** | Native (`new Axon`)                                          | Complex (Factories)  | Complex (Actors)   |
+**Axon** is a lightweight, signal-native Finite State Machine (FSM) engineered for **Angular 21+**. It eliminates bloated state management patterns in favor of deterministic, mathematically predictable state pathways.
 
 ---
 
-### Quick Start
+## 📋 Table of Contents
 
-#### 1. Define your Graph
+- [Key Features](#-key-features)
+- [The Axon Edge (Comparison)](#-the-axon-edge-comparison)
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [Core Concepts & Advanced Usage](#-core-concepts--advanced-usage)
+  - [Logic Guards](#1-logic-guards)
+  - [Debugging & Pathway Tracing](#2-debugging--pathway-tracing)
+  - [Memory Management & Teardown](#3-memory-management--teardown)
+- [Architectural Recipes](#-architectural-recipes)
+  - [1. HTTP Requests & Async Lifecycles](#1-http-requests--async-lifecycles)
+  - [2. Entity & Collection Management (Row-Level Micro-Stores)](#2-entity--collection-management-row-level-micro-stores)
+  - [3. Form State Integration & Guarded Submissions](#3-form-state-integration--guarded-submissions)
+- [License](#-license)
 
-```typescript
-enum FileState {
-  Idle,
-  Uploading,
-  Success,
-  Error,
-}
+---
 
-const fileGraph: AxonGraph<FileState> = {
-  [FileState.Idle]: [FileState.Uploading],
-  [FileState.Uploading]: [FileState.Success, FileState.Error],
-  [FileState.Error]: [FileState.Uploading],
-};
+## ✨ Key Features
+
+- **⚡ Signal-Native:** Built specifically for Angular's zoneless future with zero RxJS overhead.
+- **🛡️ Typestate Safety:** Mathematically eliminates impossible UI states at the architectural layer.
+- **🔄 Multi-Instance Ready:** Instantly manage independent state for 1,000+ table rows or canvas nodes.
+- **🎯 Reactive Transition Proxies:** `can` proxies automatically evaluate and disable UI triggers.
+- **🔒 Automatic Memory Cleanup:** Seamlessly integrates with Angular's `DestroyRef` to prevent memory leaks.
+- **📦 Micro-Footprint:** Less than 2KB gzipped with zero external dependencies.
+
+---
+
+## 📊 The Axon Edge (Comparison)
+
+| Feature | **ngx-axon** | **NgRx / Redux** | **XState** |
+| :--- | :--- | :--- | :--- |
+| **Learning Curve** | **Minutes** | Weeks | Days |
+| **Boilerplate** | **Ultra-Low** | High / Extreme | Moderate |
+| **Performance** | **$O(1)$ Signal Updates** | $O(n)$ Selector Checks | Event-Bus Overhead |
+| **Multi-Instance** | **Native** (`Axon.create()`) | Complex Factories | Complex Actor Model |
+| **Angular Integration** | **Native Signals & `DestroyRef`** | RxJS Adapters | Custom Wrappers |
+
+---
+
+## 📦 Installation
+
+```bash
+npm install @ngx-axon/core
+
 ```
 
-#### 2. Initialize in your Component
+---
+
+## 🚀 Quick Start
+
+### 1. Define your Graph
 
 ```typescript
-import { Axon } from '@axon/core';
+import { AxonGraph } from '@ngx-axon/core';
 
-@Component({ ... })
-export class UploadComponent {
-  // Simple multi-instance support
+export enum FileState {
+  Idle = 'Idle',
+  Uploading = 'Uploading',
+  Success = 'Success',
+  Error = 'Error',
+}
+
+export const fileGraph: AxonGraph<FileState, number progress: { }> = {
+  [FileState.Idle]: [FileState.Uploading],
+  [FileState.Uploading]: [FileState.Success, FileState.Error],
+  [FileState.Error]: [FileState.Uploading, FileState.Idle],
+  [FileState.Success]: [FileState.Idle]
+};
+
+```
+
+### 2. Initialize in your Component
+
+```typescript
+import { Component } from '@angular/core';
+import { Axon } from '@ngx-axon/core';
+import { FileState, fileGraph } from './file.graph';
+
+@Component({
+  selector: 'app-uploader',
+  standalone: true,
+  templateUrl: './uploader.component.html'
+})
+export class UploaderComponent {
   readonly axon = Axon.create(FileState.Idle, { progress: 0 }, fileGraph);
 
-  upload() {
+  startUpload(): void {
     if (this.axon.go(FileState.Uploading)) {
-      // Logic...
+      // Execute upload logic...
     }
   }
 }
+
 ```
 
-#### 3. Reactive UI (Angular 21)
+### 3. Bind to the Reactive UI
 
 ```html
-<button [disabled]="!axon.can.Uploading()" (click)="upload()">Start Upload</button>
+<!-- The 'can' proxy reactively checks valid transitions -->
+<button [disabled]="!axon.can.Uploading()" (click)="startUpload()">
+  Start Upload
+</button>
 
-<p>Status: {{ axon.state() }}</p>
+<p>Status: <strong>{{ axon.state() }}</strong></p>
+
 ```
 
-> **How does `axon.can.Uploading()` work?**  
-> The `can` property provides a signal-based function for each possible state transition (e.g., `can.Uploading()`), returning `true` if the transition is currently allowed based on your FSM graph and any guards you define. This enables you to easily bind UI elements to the FSM's valid transitions.
+> [!TIP]
+> **How does `axon.can.Uploading()` work?**
+> The `can` property uses a JavaScript Proxy to map status transitions to cached Angular `Signal<boolean>` computations. It automatically evaluates state graph rules and logic guards without triggering unnecessary change detection cycles.
 
-### Debugging & Pathway Tracing
+---
 
-`ngx-axon` includes built-in, color-coded transition logging to help you visualize reactive data flow through your state pathways without cluttering your code with `console.log` statements.
+## 🛠️ Core Concepts & Advanced Usage
 
-Loggers are automatically disabled in production builds via Angular's `ngDevMode` check, ensuring zero performance overhead or bundle bloat in production environments.
+### 1. Logic Guards
 
-#### Per-Instance Tracing
-
-Enable debugging on a specific store instance by passing an `AxonOptions` object to `Axon.create()` or `new Axon()`. You can also assign a custom `name` to identify specific micro-stores (e.g., individual table rows or dynamic form nodes).
+In addition to state topology, transitions can be restricted using context-aware guard functions.
 
 ```typescript
-import { Axon } from 'ngx-axon/core';
+import { AxonGraph } from '@ngx-axon/core';
 
-const rowStore = Axon.create(
+export interface PostContext {
+  title: string;
+  content: string;
+}
+
+export const postGraph: AxonGraph<'Draft' | 'Published', PostContext> = {
+  Draft: [
+    {
+      to: 'Published',
+      // Transition is allowed ONLY if content is non-empty
+      guard: (ctx) => ctx.content.trim().length > 0
+    }
+  ]
+};
+
+```
+
+---
+
+### 2. Debugging & Pathway Tracing
+
+Axon includes built-in, color-coded transition tracing to help you visualize reactive signal flow without cluttering production builds.
+
+```typescript
+import { Axon } from '@ngx-axon/core';
+
+const store = Axon.create(
   OrderState.Idle,
   { orderId: 'ORD-101', total: 49.99 },
   orderGraph,
   {
-    debug: true,          // Enables color-coded console logs for this instance
-    name: 'RowStore-101', // Custom tag prefix in console logs
-    historyLimit: 20      // Retains history limit configuration
+    debug: true,          // Enables color-coded console logs
+    name: 'RowStore-101', // Custom identifier tag
+    historyLimit: 20      // Undo/redo stack boundary
   }
 );
 
-// Trigger a transition
-rowStore.go(OrderState.Processing);
+store.go(OrderState.Processing);
 
 ```
 
@@ -123,79 +196,59 @@ rowStore.go(OrderState.Processing);
 
 ```
 
----
-
 #### Global Debug Configuration
 
-Enable tracing across all `Axon` instances in your application using `configureAxon()`. This is ideal during local development or when setting up environment-level toggles.
-
 ```typescript
-import { configureAxon } from 'ngx-axon/core';
+import { configureAxon } from '@ngx-axon/core';
 import { environment } from '../environments/environment';
 
-// Enable debugging globally across all Axon stores
 if (!environment.production) {
   configureAxon({ debug: true });
 }
 
 ```
 
-> **Note:** Instance-level configuration takes precedence over global configuration. If global debugging is enabled, passing `{ debug: false }` to a specific store will silence that instance.
+> [!NOTE]
+> Debug loggers check Angular's `ngDevMode` flag and are completely tree-shaken in production builds.
 
 ---
 
-#### Configuration Options Reference
+### 3. Memory Management & Teardown
 
-The `AxonOptions` object replaces the optional `historyLimit` number parameter while remaining fully backward-compatible:
-
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `debug` | `boolean` | `false` | Enables console logging for state transitions on this instance. |
-| `name` | `string` | `undefined` | Optional identifier appended to log tags (e.g., `[ngx-axon: Name]`). |
-| `historyLimit` | `number` | `50` | Maximum number of undo/redo history entries retained. |
-
-To reset global settings (useful in test teardowns), use `resetAxonGlobalConfig()`:
+Dynamically created micro-stores (e.g., inside service collections or table loops) are automatically garbage-collected when created inside an Angular Injection Context.
 
 ```typescript
-import { resetAxonGlobalConfig } from 'ngx-axon/core';
+// Inside a Component or Directive: DestroyRef automatically hooks up cleanup
+readonly store = Axon.create(State.Idle, context, graph);
 
-afterEach(() => {
-  resetAxonGlobalConfig();
-});
+// Inside a Root Service or Dynamic Array: Explicitly release references
+removeRow(id: string): void {
+  const store = this.rowMap.get(id);
+  if (store) {
+    store.destroy(); // Clears cached signals & severs graph closures
+    this.rowMap.delete(id);
+  }
+}
 
 ```
 
-### Advanced: Logic Guards
+---
 
-Axon allows you to define transitions that depend on the data context, not just the current state.
-
-```typescript
-const graph: AxonGraph<State, Context> = {
-  [State.Draft]: [
-    {
-      to: State.Published,
-      guard: (ctx) => ctx.content.length > 0,
-    },
-  ],
-};
-```
-
-## Architectural Recipes
+## 📐 Architectural Recipes
 
 ### 1. HTTP Requests & Async Lifecycles
 
-Managing async operations with raw booleans like `isLoading` or `isError` often leads to impossible UI states (e.g., displaying a loading spinner and an error banner simultaneously). `Axon` eliminates invalid states by modeling the API lifecycle as an explicit state machine graph.
+Eliminate impossible UI states (e.g., displaying a loading spinner and an error banner simultaneously) by modeling API lifecycles explicitly.
 
 ```typescript
-import { Component, inject, signal } from '@angular/core';
-import { Axon, AxonGraph } from 'ngx-axon/core';
+import { Component } from '@angular/core';
+import { Axon, AxonGraph } from '@ngx-axon/core';
 
 export type ApiState = 'Idle' | 'Loading' | 'Success' | 'Error';
 
 export interface User {
   readonly id: string;
   readonly name: string;
-  readonly email: string;
 }
 
 export interface FetchContext<T> {
@@ -207,8 +260,8 @@ export interface FetchContext<T> {
 const apiGraph: AxonGraph<ApiState, FetchContext<User>> = {
   Idle: ['Loading'],
   Loading: ['Success', 'Error'],
-  Error: ['Loading', 'Idle'], // Retry or Reset
-  Success: ['Loading', 'Idle'] // Refresh or Reset
+  Error: ['Loading', 'Idle'],
+  Success: ['Loading', 'Idle']
 };
 
 @Component({
@@ -239,49 +292,41 @@ export class UserProfileComponent {
   );
 
   async fetchUser(userId: string): Promise<void> {
-    // 1. Guard against duplicate or invalid concurrent requests
     const transitioned = this.axon.go('Loading', (ctx) => ({
       ...ctx,
       attempts: ctx.attempts + 1,
       error: null
     }));
 
-    if (!transitioned) {
-      return; // Request already in progress or transition guarded
-    }
+    if (!transitioned) return; // Disallows concurrent duplicate calls
 
     try {
       const user = await this.mockApiCall(userId);
       this.axon.go('Success', (ctx) => ({ ...ctx, data: user }));
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch user';
-      this.axon.go('Error', (ctx) => ({ ...ctx, error: errorMessage }));
+      const error = err instanceof Error ? err.message : 'Failed to fetch user';
+      this.axon.go('Error', (ctx) => ({ ...ctx, error }));
     }
   }
 
   private mockApiCall(id: string): Promise<User> {
     return new Promise((resolve) =>
-      setTimeout(() => resolve({ id, name: 'Alex Developer', email: 'alex@example.com' }), 1000)
+      setTimeout(() => resolve({ id, name: 'Alex Developer' }), 1000)
     );
   }
 }
 
 ```
 
-**Why Axon Handles This Elegantly:**
-
-* **Impossible State Elimination:** Your template cannot accidentally render both `Success` data and an `Error` message.
-* **Concurrent Request Prevention:** Calling `fetchUser()` while state is already `'Loading'` automatically evaluates `axon.go('Loading')` to `false` based on the graph definition, preventing duplicate network calls.
-
 ---
 
 ### 2. Entity & Collection Management (Row-Level Micro-Stores)
 
-When managing complex collections (like heavy data tables, Kanban boards, or order items), binding global store state to individual items forces unnecessary re-renders. `Axon` allows you to instantiate independent, micro-store instances per row with automated lifecycle teardown.
+Avoid re-rendering heavy table components by assigning an independent, lightweight state machine to each row item.
 
 ```typescript
 import { Injectable } from '@angular/core';
-import { Axon, AxonGraph } from 'ngx-axon/core';
+import { Axon, AxonGraph } from '@ngx-axon/core';
 
 export type RowState = 'Read' | 'Editing' | 'Saving' | 'Error';
 
@@ -289,16 +334,15 @@ export interface OrderRowContext {
   readonly id: string;
   readonly quantity: number;
   readonly price: number;
-  readonly errorMessage?: string;
 }
 
 const rowGraph: AxonGraph<RowState, OrderRowContext> = {
   Read: ['Editing'],
   Editing: [
-    'Read', // Cancel
+    'Read',
     {
       to: 'Saving',
-      guard: (ctx) => ctx.quantity > 0 && ctx.price >= 0 // Business Guard
+      guard: (ctx) => ctx.quantity > 0 && ctx.price >= 0
     }
   ],
   Saving: ['Read', 'Error'],
@@ -319,15 +363,10 @@ export class OrderTableService {
     return store;
   }
 
-  getRowStore(id: string): RowAxon | undefined {
-    return this.rows.get(id);
-  }
-
   removeRow(id: string): void {
     const store = this.rows.get(id);
     if (store) {
-      // Safely disconnect signal dependency nodes and sever graph references
-      store.destroy();
+      store.destroy(); // Safely disconnects signals and clears GC references
       this.rows.delete(id);
     }
   }
@@ -342,37 +381,30 @@ export class OrderTableService {
 
 ```
 
-**Why Axon Handles This Elegantly:**
-
-* **Targeted Isolation:** Re-renders and reactive computation remain strictly scoped to the modified row.
-* **Guaranteed Memory Safety:** Invoking `.destroy()` during row deletion breaks guard closures, clears cached signals, and ensures the Garbage Collector reclaims memory instantly.
-
 ---
 
 ### 3. Form State Integration & Guarded Submissions
 
-Connecting Angular Reactive Forms or Signal Forms to an `Axon` pathway decouples business transition rules from form templates. Machine guards prevent invalid submissions at the state layer.
+Decouple business transition rules from template validation by binding Angular Reactive Forms directly to an Axon state graph.
 
 ```typescript
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Axon, AxonGraph } from 'ngx-axon/core';
+import { Axon, AxonGraph } from '@ngx-axon/core';
 
 export type FormState = 'Pristine' | 'Editing' | 'Submitting' | 'Submitted' | 'Error';
 
-export interface CheckoutFormContext {
+export interface CheckoutContext {
   readonly email: string;
   readonly agreeToTerms: boolean;
-  readonly serverError: string | null;
 }
 
-const checkoutGraph: AxonGraph<FormState, CheckoutFormContext> = {
+const checkoutGraph: AxonGraph<FormState, CheckoutContext> = {
   Pristine: ['Editing'],
   Editing: [
-    'Editing', // Field updates
+    'Editing',
     {
       to: 'Submitting',
-      // Machine-level Guard: Guarantees submission state cannot be reached without terms agreement
       guard: (ctx) => ctx.agreeToTerms && ctx.email.includes('@')
     }
   ],
@@ -394,7 +426,6 @@ const checkoutGraph: AxonGraph<FormState, CheckoutFormContext> = {
         I agree to terms
       </label>
 
-      <!-- The 'can' proxy reactively checks machine guards -->
       <button type="submit" [disabled]="!axon.can.Submitting()">
         @if (axon.is('Submitting')) {
           Processing...
@@ -411,49 +442,38 @@ export class CheckoutFormComponent {
     agreeToTerms: new FormControl(false, { nonNullable: true, validators: [Validators.requiredTrue] })
   });
 
-  readonly axon = Axon.create<FormState, CheckoutFormContext>(
+  readonly axon = Axon.create<FormState, CheckoutContext>(
     'Pristine',
-    { email: '', agreeToTerms: false, serverError: null },
+    { email: '', agreeToTerms: false },
     checkoutGraph,
     { name: 'CheckoutForm' }
   );
 
   onFieldChange(): void {
-    const rawValues = this.form.getRawValue();
-    
-    this.axon.go('Editing', (ctx) => ({
-      ...ctx,
-      email: rawValues.email,
-      agreeToTerms: rawValues.agreeToTerms
-    }));
+    const raw = this.form.getRawValue();
+    this.axon.go('Editing', (ctx) => ({ ...ctx, ...raw }));
   }
 
   async submitCheckout(): Promise<void> {
-    const isAllowed = this.axon.go('Submitting');
-    if (!isAllowed) {
-      return; // Guard rejected transition (e.g. invalid form state)
-    }
+    if (!this.axon.go('Submitting')) return;
 
     try {
-      await this.fakeSubmitApi(this.axon.context());
+      await this.fakeApiCall();
       this.axon.go('Submitted');
     } catch {
-      this.axon.go('Error', (ctx) => ({ ...ctx, serverError: 'Payment failed' }));
+      this.axon.go('Error');
     }
   }
 
-  private fakeSubmitApi(_payload: CheckoutFormContext): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, 1500));
+  private fakeApiCall(): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, 1000));
   }
 }
 
 ```
 
-**Why Axon Handles This Elegantly:**
+---
 
-* **Reactive Button Disabling:** `axon.can.Submitting()` is a memoized Angular Signal that automatically reflects both Angular form state and custom machine guards without template boilerplate.
-* **Double-Submit Proof:** While in `'Submitting'`, transition to `'Submitting'` is disallowed by the graph definition, preventing repeated button clicks from firing multiple HTTP calls.
+## 📄 License
 
-### License
-
-MIT © 2026 [Marco Buschini] <marco.buschini@gmail.com>. Built for the future of Angular.
+MIT © 2026 [Marco Buschini](mailto:marco.buschini@gmail.com). Built for the future of Angular.
