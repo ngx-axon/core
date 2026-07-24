@@ -1,4 +1,4 @@
-import { signal, computed, Signal, untracked, WritableSignal } from '@angular/core';
+import { signal, computed, Signal, untracked, WritableSignal, inject, DestroyRef } from '@angular/core';
 
 /**
  * Narrowed transition type to avoid 'any' in logic gates.
@@ -16,6 +16,7 @@ export class Axon<S extends string | number, T> {
   // History is kept as a Readonly array to enforce immutable updates
   private _history: readonly { readonly status: S; readonly context: T }[] = [];
   private readonly _historyIndex = signal(0);
+  private readonly _isDestroyed = signal(false);
 
   readonly state = computed(() => this._state().status);
   readonly context = computed(() => this._state().context);
@@ -33,12 +34,21 @@ export class Axon<S extends string | number, T> {
   constructor(
     private readonly initialState: S,
     private readonly initialContext: T,
-    private readonly graph: AxonGraph<S, T>,
+    private graph: AxonGraph<S, T>,
     private readonly historyLimit = 50
   ) {
     const initial = { status: this.initialState, context: this.initialContext };
     this._state = signal(initial);
     this._history = [initial];
+
+    // Automatically bind to Angular's DestroyRef if instantiated within an Injection Context
+    try {
+      const destroyRef = inject(DestroyRef, { optional: true });
+      destroyRef?.onDestroy(() => this.destroy());
+    } catch {
+      // Instantiated outside an Injection Context (e.g., dynamic factory outside component initialization, loops, or unit tests).
+      // Manual cleanup via axon.destroy() is required.
+    }
   }
 
   static create<S extends string | number, T>(
@@ -50,11 +60,34 @@ export class Axon<S extends string | number, T> {
     return new Axon<S, T>(initialState, context, graph, historyLimit);
   }
 
+  get isDestroyed(): boolean {
+    return this._isDestroyed();
+  }
+
+  public destroy(): void {
+    if (this._isDestroyed()) {
+      return;
+    }
+    this._isDestroyed.set(true);
+
+    // 1. Clear cached computed signals to allow GC of signal dependency nodes
+    this._canGoCache.clear();
+
+    // 2. Sever references to history and transition guard context closures
+    this._history = [];
+    this.graph = {} as AxonGraph<S, T>;
+  }
+
   canGo(nextState: S): Signal<boolean> {
+    if (this._isDestroyed()) {
+      return computed(() => false);
+    }
+
     let canGoSignal = this._canGoCache.get(nextState);
     
     if (!canGoSignal) {
       canGoSignal = computed(() => {
+        if (this._isDestroyed()) return false;
         const { status, context } = this._state();
         const allowed = this.graph[status] ?? [];
         
@@ -72,6 +105,10 @@ export class Axon<S extends string | number, T> {
   }
 
   go(nextState: S, updater?: (current: T) => T): boolean {
+    if (this._isDestroyed()) {
+      return false;
+    }
+
     return untracked(() => {
       if (this.canGo(nextState)()) {
         const current = this._state().context;
@@ -106,6 +143,7 @@ export class Axon<S extends string | number, T> {
   }
 
   undo(): void {
+    if (this._isDestroyed()) return;
     const currentIndex = this._historyIndex();
     if (currentIndex > 0) {
       const prevIndex = currentIndex - 1;
@@ -115,6 +153,7 @@ export class Axon<S extends string | number, T> {
   }
 
   redo(): void {
+    if (this._isDestroyed()) return;
     const currentIndex = this._historyIndex();
     if (currentIndex < this._history.length - 1) {
       const nextIndex = currentIndex + 1;

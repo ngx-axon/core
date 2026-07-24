@@ -258,6 +258,41 @@ export class FileUploaderComponent {
 
 ```
 
+Here is the updated `Axon` implementation updated with explicit memory management and automatic lifecycle hookup via Angular's `DestroyRef`.
+
+## Axon State Memory Management Best Practices
+
+Dynamic instantiation of micro-stores (e.g., individual store instances for table rows, tree nodes, or dynamic form fields) requires careful lifecycle handling to avoid memory leaks.
+
+### Automatic Teardown vs. Manual Teardown
+
+| Instantiation Context | Behavior | Cleanup Responsibility |
+| --- | --- | --- |
+| **Component Field / Constructor** | `inject(DestroyRef)` finds the component's injector. | **Automatic**: Automatically calls `destroy()` when the component unmounts. |
+| **Directive / Pipe** | Binds to the directive or pipe injection scope. | **Automatic**: Teardown happens automatically on directive destruction. |
+| **Root/Singleton Service** | Binds to the root injector. | **Manual**: `DestroyRef` won't trigger until the app shuts down. Call `axon.destroy()` when items are removed. |
+| **Array/Collection (Data Tables)** | Instantiated lazily inside arrays, maps, or methods. | **Manual**: Outside injection context. Call `.destroy()` when removing/replacing dynamic items. |
+
+### Best Practices for Row-Level State in Heavy Data Tables
+
+1. **Clear Collection References Explicitly:**
+When removing a row or resetting table data in a service, iterate over removed stores and invoke `.destroy()` before dropping references.
+```typescript
+removeRow(rowId: string) {
+  const store = this.rowStores.get(rowId);
+  if (store) {
+    store.destroy(); // Releases graph guards, history, and signal nodes
+    this.rowStores.delete(rowId);
+  }
+}
+
+```
+
+2. **Beware of Guard Closures:**
+Guards inside `AxonGraph` definitions often capture external variables or parent references. Calling `.destroy()` clears internal references to `this.graph`, severing retained object chains.
+3. **Avoid Unbound Reactive Effects Inside Dynamic Stores:**
+If extending `Axon` with custom `effect()` or RxJS `Observable` subscriptions, ensure they are registered to trigger `.destroy()` or managed within a `Subscription` bucket cleaned up in `destroy()`.
+
 ## Summary
 
 By leveraging `@ngx-axon/core`, you ensure your templates react purely to simple top-level constraints while keeping your internal transition paths clean, verifiable, and highly scalable. Try replacing your deeply conditional boolean flags with an axon pathway today!
