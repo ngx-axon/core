@@ -1,5 +1,7 @@
 import { signal, computed, Signal, untracked, WritableSignal, inject, DestroyRef } from '@angular/core';
 
+declare const ngDevMode: boolean | undefined;
+
 /**
  * Narrowed transition type to avoid 'any' in logic gates.
  */
@@ -9,6 +11,28 @@ export type AxonTransition<S extends string | number, T> =
 
 export type AxonGraph<S extends string | number, T> = Readonly<Partial<Record<S, readonly AxonTransition<S, T>[]>>>;
 
+export interface AxonOptions {
+  readonly debug?: boolean;
+  readonly historyLimit?: number;
+  readonly name?: string;
+}
+
+export interface AxonGlobalConfig {
+  debug?: boolean;
+}
+
+let globalConfig: AxonGlobalConfig = {
+  debug: false
+};
+
+export function configureAxon(config: AxonGlobalConfig): void {
+  globalConfig = { ...globalConfig, ...config };
+}
+
+export function resetAxonGlobalConfig(): void {
+  globalConfig = { debug: false };
+}
+
 export class Axon<S extends string | number, T> {
   private readonly _state: WritableSignal<{ readonly status: S; readonly context: T }>;
   private readonly _canGoCache = new Map<S, Signal<boolean>>();
@@ -17,6 +41,10 @@ export class Axon<S extends string | number, T> {
   private _history: readonly { readonly status: S; readonly context: T }[] = [];
   private readonly _historyIndex = signal(0);
   private readonly _isDestroyed = signal(false);
+
+  private readonly _debug?: boolean;
+  private readonly _name?: string;
+  private readonly historyLimit: number;
 
   readonly state = computed(() => this._state().status);
   readonly context = computed(() => this._state().context);
@@ -35,8 +63,16 @@ export class Axon<S extends string | number, T> {
     private readonly initialState: S,
     private readonly initialContext: T,
     private graph: AxonGraph<S, T>,
-    private readonly historyLimit = 50
+    options?: number | AxonOptions
   ) {
+    if (typeof options === 'number') {
+      this.historyLimit = options;
+    } else {
+      this.historyLimit = options?.historyLimit ?? 50;
+      this._debug = options?.debug;
+      this._name = options?.name;
+    }
+
     const initial = { status: this.initialState, context: this.initialContext };
     this._state = signal(initial);
     this._history = [initial];
@@ -55,9 +91,9 @@ export class Axon<S extends string | number, T> {
     initialState: S,
     context: T,
     graph: AxonGraph<S, T>,
-    historyLimit = 50
+    options?: number | AxonOptions
   ): Axon<S, T> {
-    return new Axon<S, T>(initialState, context, graph, historyLimit);
+    return new Axon<S, T>(initialState, context, graph, options);
   }
 
   get isDestroyed(): boolean {
@@ -111,6 +147,7 @@ export class Axon<S extends string | number, T> {
 
     return untracked(() => {
       if (this.canGo(nextState)()) {
+        const fromStatus = this._state().status;
         const current = this._state().context;
         const newState = { 
           status: nextState, 
@@ -133,7 +170,7 @@ export class Axon<S extends string | number, T> {
         }
 
         this._history = nextHistory;
-        console.log('Transitioned with history: ', this._history);
+        this._logTransition(fromStatus, nextState, newState.context);
         this._historyIndex.set(this._history.length - 1);
         this._state.set(newState);
         return true;
@@ -168,5 +205,25 @@ export class Axon<S extends string | number, T> {
 
   is(status: S): boolean {
     return this._state().status === status;
+  }
+
+  private _logTransition(fromState: S, toState: S, context: T): void {
+    if (typeof ngDevMode !== 'undefined' && !ngDevMode) {
+      return;
+    }
+
+    const isDebug = this._debug ?? globalConfig.debug ?? false;
+    if (!isDebug) {
+      return;
+    }
+
+    const tag = this._name ? `[ngx-axon: ${this._name}]` : '[ngx-axon]';
+    console.log(
+      `%c${tag}%c ${fromState} ──> ${toState} %c| Context:`,
+      'color: #8b5cf6; font-weight: bold;',
+      'color: inherit; font-weight: bold;',
+      'color: #6b7280;',
+      context
+    );
   }
 }

@@ -87,7 +87,83 @@ export class UploadComponent {
 > **How does `axon.can.Uploading()` work?**  
 > The `can` property provides a signal-based function for each possible state transition (e.g., `can.Uploading()`), returning `true` if the transition is currently allowed based on your FSM graph and any guards you define. This enables you to easily bind UI elements to the FSM's valid transitions.
 
+### Debugging & Pathway Tracing
+
+`ngx-axon` includes built-in, color-coded transition logging to help you visualize reactive data flow through your state pathways without cluttering your code with `console.log` statements.
+
+Loggers are automatically disabled in production builds via Angular's `ngDevMode` check, ensuring zero performance overhead or bundle bloat in production environments.
+
+#### Per-Instance Tracing
+
+Enable debugging on a specific store instance by passing an `AxonOptions` object to `Axon.create()` or `new Axon()`. You can also assign a custom `name` to identify specific micro-stores (e.g., individual table rows or dynamic form nodes).
+
+```typescript
+import { Axon } from 'ngx-axon/core';
+
+const rowStore = Axon.create(
+  OrderState.Idle,
+  { orderId: 'ORD-101', total: 49.99 },
+  orderGraph,
+  {
+    debug: true,          // Enables color-coded console logs for this instance
+    name: 'RowStore-101', // Custom tag prefix in console logs
+    historyLimit: 20      // Retains history limit configuration
+  }
+);
+
+// Trigger a transition
+rowStore.go(OrderState.Processing);
+
+```
+
+**Console Output:**
+
+```text
+[ngx-axon: RowStore-101] Idle ──> Processing | Context: { orderId: 'ORD-101', total: 49.99 }
+
+```
+
 ---
+
+#### Global Debug Configuration
+
+Enable tracing across all `Axon` instances in your application using `configureAxon()`. This is ideal during local development or when setting up environment-level toggles.
+
+```typescript
+import { configureAxon } from 'ngx-axon/core';
+import { environment } from '../environments/environment';
+
+// Enable debugging globally across all Axon stores
+if (!environment.production) {
+  configureAxon({ debug: true });
+}
+
+```
+
+> **Note:** Instance-level configuration takes precedence over global configuration. If global debugging is enabled, passing `{ debug: false }` to a specific store will silence that instance.
+
+---
+
+#### Configuration Options Reference
+
+The `AxonOptions` object replaces the optional `historyLimit` number parameter while remaining fully backward-compatible:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `debug` | `boolean` | `false` | Enables console logging for state transitions on this instance. |
+| `name` | `string` | `undefined` | Optional identifier appended to log tags (e.g., `[ngx-axon: Name]`). |
+| `historyLimit` | `number` | `50` | Maximum number of undo/redo history entries retained. |
+
+To reset global settings (useful in test teardowns), use `resetAxonGlobalConfig()`:
+
+```typescript
+import { resetAxonGlobalConfig } from 'ngx-axon/core';
+
+afterEach(() => {
+  resetAxonGlobalConfig();
+});
+
+```
 
 ### Advanced: Logic Guards
 
