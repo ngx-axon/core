@@ -3,24 +3,21 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "rootDir": "src",
-    "baseUrl": "./",
     "types": [],
     "paths": {
-      "@ngx-axon/core": [
-        "../../dist/axon" 
-      ],
-      "@ngx-axon/core/*": [
-        "../../dist/axon/*"
-      ]
+      "@ngx-axon/core": ["../../dist/axon"],
+      "@ngx-axon/core/*": ["../../dist/axon/*"]
     }
   },
-  "files": [
-    "src/main.ts"
-  ],
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "src/**/*.spec.ts"
-  ]
+  "files": ["src/main.ts"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts"],
+  "angularCompilerOptions": {
+    "extendedDiagnostics": {
+      "checks": {
+        "nullishCoalescingNotNullable": "suppress",
+        "optionalChainNotNullable": "suppress"
+      }
+    }
+  }
 }
