@@ -277,6 +277,7 @@ Dynamic instantiation of micro-stores (e.g., individual store instances for tabl
 
 1. **Clear Collection References Explicitly:**
 When removing a row or resetting table data in a service, iterate over removed stores and invoke `.destroy()` before dropping references.
+
 ```typescript
 removeRow(rowId: string) {
   const store = this.rowStores.get(rowId);
