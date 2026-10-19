@@ -88,7 +88,7 @@ export enum FileState {
   Error = 'Error',
 }
 
-export const fileGraph: AxonGraph<FileState, number progress: { }> = {
+export const fileGraph: AxonGraph<FileState, { progress: number }> = {
   [FileState.Idle]: [FileState.Uploading],
   [FileState.Uploading]: [FileState.Success, FileState.Error],
   [FileState.Error]: [FileState.Uploading, FileState.Idle],
